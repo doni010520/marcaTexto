@@ -1,47 +1,47 @@
 import os
 import json
+import logging
+
+# --- Diagnóstico de Arranque ---
+# Estas mensagens são cruciais. Se não aparecerem, o problema é anterior à execução do script.
+print("--- INICIANDO EXECUÇÃO DO SCRIPT PYTHON ---")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.info("Logging configurado. A verificar variáveis de ambiente...")
+
+try:
+    # Verificação detalhada de cada variável
+    CREDENTIALS_JSON_STR = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+    logging.info(f"GOOGLE_CREDENTIALS_JSON: Carregada (Comprimento: {len(CREDENTIALS_JSON_STR) if CREDENTIALS_JSON_STR else 0})")
+    if not CREDENTIALS_JSON_STR:
+        raise ValueError("Variável GOOGLE_CREDENTIALS_JSON está vazia ou não existe.")
+    creds_info = json.loads(CREDENTIALS_JSON_STR)
+    logging.info("GOOGLE_CREDENTIALS_JSON: JSON válido.")
+
+    TOKEN_JSON_STR = os.environ.get("GOOGLE_TOKEN_JSON")
+    logging.info(f"GOOGLE_TOKEN_JSON: Carregada (Comprimento: {len(TOKEN_JSON_STR) if TOKEN_JSON_STR else 0})")
+    if not TOKEN_JSON_STR:
+        raise ValueError("Variável GOOGLE_TOKEN_JSON está vazia ou não existe.")
+    token_info = json.loads(TOKEN_JSON_STR)
+    logging.info("GOOGLE_TOKEN_JSON: JSON válido.")
+
+    API_KEY = os.environ.get("API_KEY")
+    logging.info(f"API_KEY: Carregada (Comprimento: {len(API_KEY) if API_KEY else 0})")
+    if not API_KEY:
+        raise ValueError("Variável API_KEY está vazia ou não existe.")
+    
+    logging.info("SUCESSO: Todas as variáveis de ambiente foram carregadas e validadas.")
+
+except Exception as e:
+    logging.critical(f"ERRO CRÍTICO NO ARRANQUE: A aplicação vai parar. Causa: {e}", exc_info=True)
+    raise
+
+# --- O resto da aplicação só carrega se a configuração passar ---
 from fastapi import FastAPI, HTTPException, Header
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from pydantic import BaseModel
-import logging
-
-# Configuração do logging para ver as mensagens no Easypanel
-logging.basicConfig(level=logging.INFO)
-
-# --- Configuração ---
-logging.info("Iniciando a configuração da aplicação...")
-
-try:
-    CREDENTIALS_JSON_STR = os.environ.get("GOOGLE_CREDENTIALS_JSON")
-    if not CREDENTIALS_JSON_STR:
-        logging.error("ERRO CRÍTICO: Variável de ambiente GOOGLE_CREDENTIALS_JSON não encontrada.")
-        raise ValueError("GOOGLE_CREDENTIALS_JSON não configurada")
-    logging.info("Sucesso: Variável GOOGLE_CREDENTIALS_JSON carregada.")
-    
-    creds_info = json.loads(CREDENTIALS_JSON_STR)
-    logging.info("Sucesso: GOOGLE_CREDENTIALS_JSON parseado com sucesso.")
-
-    TOKEN_JSON_STR = os.environ.get("GOOGLE_TOKEN_JSON")
-    if not TOKEN_JSON_STR:
-        logging.error("ERRO CRÍTICO: Variável de ambiente GOOGLE_TOKEN_JSON não encontrada.")
-        raise ValueError("GOOGLE_TOKEN_JSON não configurada")
-    logging.info("Sucesso: Variável GOOGLE_TOKEN_JSON carregada.")
-    
-    token_info = json.loads(TOKEN_JSON_STR)
-    logging.info("Sucesso: GOOGLE_TOKEN_JSON parseado com sucesso.")
-
-    API_KEY = os.environ.get("API_KEY")
-    if not API_KEY:
-        logging.error("ERRO CRÍTICO: Variável de ambiente API_KEY não encontrada.")
-        raise ValueError("API_KEY não configurada")
-    logging.info("Sucesso: Variável API_KEY carregada.")
-
-except (json.JSONDecodeError, ValueError) as e:
-    logging.error(f"ERRO CRÍTICO durante a inicialização: {e}")
-    raise
 
 SCOPES = ["https://www.googleapis.com/auth/documents"]
 
@@ -118,6 +118,6 @@ async def processar_documento(req: ProcessRequest, x_api_key: str = Header(None)
             detail=f"Erro na API do Google: {error_details.get('message', 'Erro desconhecido')}. Verifique se o ID do documento é de um Google Doc nativo."
         )
     except Exception as e:
-        logging.error(f"Erro interno não esperado: {e}")
+        logging.error(f"Erro interno não esperado: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Ocorreu um erro interno: {str(e)}")
 
