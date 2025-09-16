@@ -1,0 +1,13 @@
+# Ignorar arquivos de ambiente Python
+__pycache__/
+*.pyc
+.env
+venv
+
+# Ignorar arquivos de segredo do Google
+credentials.json
+token.json
+
+# Ignorar arquivos do sistema operacional
+.DS_Store
+Thumbs.db
