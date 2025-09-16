@@ -24,10 +24,29 @@ class ProcessRequest(BaseModel):
     documento_destino_id: str
 
 def get_credentials_from_env():
+    """
+    Carrega as credenciais de forma robusta a partir das variáveis de ambiente,
+    garantindo que o refresh token funcione corretamente.
+    """
+    token_info = json.loads(TOKEN_JSON_STR)
     creds_info = json.loads(CREDENTIALS_JSON_STR)
-    creds = Credentials.from_authorized_user_info(json.loads(TOKEN_JSON_STR), SCOPES)
-    if creds.expired and creds.refresh_token:
+    
+    # Extrai a chave correta ('installed' ou 'web') do credentials.json
+    client_config = creds_info.get('installed', creds_info.get('web'))
+
+    creds = Credentials(
+        token=token_info.get('token'),
+        refresh_token=token_info.get('refresh_token'),
+        token_uri=client_config.get('token_uri'),
+        client_id=client_config.get('client_id'),
+        client_secret=client_config.get('client_secret'),
+        scopes=SCOPES
+    )
+
+    # Se o token de acesso expirou, ele usa o refresh_token para obter um novo
+    if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
+    
     return creds
 
 def get_red_text(docs_service, document_id):
