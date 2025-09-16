@@ -57,6 +57,11 @@ def find_text_and_highlight(docs_service, document_id, text_to_find):
     }]
     docs_service.documents().batchUpdate(documentId=document_id, body={"requests": requests}).execute()
 
+@app.get("/")
+async def health_check():
+    """Endpoint for Easypanel health checks."""
+    return {"status": "ok"}
+
 @app.post("/processar")
 async def processar_documento(req: ProcessRequest, x_api_key: str = Header(None)):
     if x_api_key != API_KEY:
@@ -84,3 +89,4 @@ async def processar_documento(req: ProcessRequest, x_api_key: str = Header(None)
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ocorreu um erro interno: {str(e)}")
+
